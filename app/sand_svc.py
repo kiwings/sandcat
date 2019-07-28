@@ -11,13 +11,16 @@ class SandService:
 
     def __init__(self, services):
         self.data_svc = services.get('data_svc')
+        self.file_svc = services.get('file_svc')
         self.utility_svc = services.get('utility_svc')
         self.log = self.utility_svc.create_logger('sandcat')
 
     async def compile(self, platform):
         if which('go') is not None:
-            key = await self._insert_unique_deployment_key()
-            self.log.debug('New agent compiled with key = %s' % key)
+            await self._insert_unique_deployment_key()
+            await self.file_svc.write_csv(
+                await self.data_svc.dao.get('core_ability'), 'plugins/sandcat/gocat/abilities.csv'
+            )
             main_module = 'plugins/sandcat/gocat/sandcat.go'
             output = 'plugins/sandcat/payloads/%s' % platform
             os.system('GOOS=%s go build -o %s -ldflags="-s -w" %s' % (platform, output, main_module))
@@ -58,8 +61,7 @@ class SandService:
 
     """ PRIVATE """
 
-    @staticmethod
-    async def _insert_unique_deployment_key(size=30):
+    async def _insert_unique_deployment_key(self, size=30):
         key = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(size))
         distraction = 'plugins/sandcat/gocat/deception/deception.go'
         lines = open(distraction, 'r').readlines()
@@ -67,4 +69,4 @@ class SandService:
         out = open(distraction, 'w')
         out.writelines(lines)
         out.close()
-        return key
+        self.log.debug('New agent compiled with key=%s' % key)
