@@ -50,10 +50,17 @@ func main() {
 
 	server := flag.String("server", "http://localhost:8888", "The fqdn of CALDERA")
 	group := flag.String("group", "my_group", "Attach a group to this agent")
+	autonomous := flag.Bool("autonomous", false, "Run agent in autonomous mode")
 	flag.Parse()
 
 	deception.Log()
-	for {
-		runBeaconIteration(*server, paw, *group, files)
+	if *autonomous == true {
+		for {
+			runAutonomousIteration(*server, paw, *group, files)
+		}
+	} else {
+		for {
+			runBeaconIteration(*server, paw, *group, files)
+		}
 	}
 }
